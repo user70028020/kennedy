@@ -1,0 +1,21 @@
+{
+	"/": [],
+	"/admin": [],
+	"/admin/auditoria": [],
+	"/admin/backups": [],
+	"/admin/colaboradores": [],
+	"/admin/database": [],
+	"/admin/lixeira": [],
+	"/admin/mesclar": [],
+	"/admin/os": [],
+	"/admin/relatorios": [],
+	"/admin/templates": [],
+	"/admin/usuarios": [],
+	"/login": [],
+	"/relatorios": [],
+	"/relatorios/fotografico": [],
+	"/relatorios/gastos": [],
+	"/relatorios/rdo": [],
+	"/relatorios/spda": [],
+	"/relatorios/tecnico": []
+}

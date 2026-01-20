@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limpar Cache do Localhost</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #60a5fa;
+            margin-top: 0;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .success {
+            background: #22c55e;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            display: none;
+        }
+        .info {
+            background: #374151;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        code {
+            background: #1a1a1a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Limpar Cache do Localhost</h1>
+        
+        <p>Esta página limpa APENAS os dados do <code>localhost:5173</code></p>
+        
+        <div class="info">
+            <strong>O que será limpo:</strong>
+            <ul>
+                <li>localStorage do Vite/HMR</li>
+                <li>sessionStorage do Vite/HMR</li>
+                <li>Cache do Service Worker (se houver)</li>
+                <li>Cookies do localhost</li>
+            </ul>
+            <strong>Seus outros sites NÃO serão afetados!</strong>
+        </div>
+
+        <button onclick="clearLocalhost()">Limpar Cache do Localhost</button>
+        <button onclick="window.location.href='/'">Voltar para o App</button>
+
+        <div class="success" id="success">
+            ✅ Cache do localhost limpo com sucesso!<br>
+            <small>Você pode fechar esta aba e recarregar o app.</small>
+        </div>
+    </div>
+
+    <script>
+        function clearLocalhost() {
+            // Limpar localStorage
+            localStorage.clear();
+            
+            // Limpar sessionStorage
+            sessionStorage.clear();
+            
+            // Limpar cookies do localhost
+            document.cookie.split(";").forEach(function(c) { 
+                document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+            });
+            
+            // Limpar cache do Service Worker
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    for (let name of names) {
+                        caches.delete(name);
+                    }
+                });
+            }
+            
+            // Desregistrar Service Workers
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+            
+            // Mostrar mensagem de sucesso
+            document.getElementById('success').style.display = 'block';
+            
+            // Recarregar após 2 segundos
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

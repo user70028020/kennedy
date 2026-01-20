@@ -1,0 +1,802 @@
+<script lang="ts">
+	/**
+	 * RDO de Montagem Page
+	 * Página para geração de Relatório Diário de Obra de Montagem
+	 * Requirements: 5.1, 5.2, 5.3
+	 */
+	import PhotoCapture, { type Photo } from '$lib/components/reports/PhotoCapture.svelte';
+	import SignatureCapture from '$lib/components/reports/SignatureCapture.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+
+	const API_URL = 'http://localhost:3000/api';
+
+	// Team member interface
+	interface TeamMember {
+		id: string;
+		nome: string;
+		funcao: string;
+		empresa: string;
+	}
+
+	// Representative interface
+	interface Representative {
+		id: string;
+		nome: string;
+		cargo: string;
+		empresa: string;
+		assinatura: string;
+	}
+
+	// Work schedule interface
+	interface WorkSchedule {
+		inicio: string;
+		intervaloInicio: string;
+		intervaloFim: string;
+		fim: string;
+		horasExtras: string;
+	}
+
+	// Form state - General Info
+	let template = $state<'nx_energy' | 'sercamp'>('nx_energy');
+	let osNumber = $state('');
+	let reportDate = $state(new Date().toISOString().split('T')[0]);
+	let projeto = $state('');
+	let clientName = $state('');
+	let location = $state('');
+
+	// Service description
+	let descricaoServico = $state('');
+
+	// Representatives
+	let representatives = $state<Representative[]>([
+		{ id: generateId(), nome: '', cargo: '', empresa: '', assinatura: '' }
+	]);
+
+	// Team members
+	let teamMembers = $state<TeamMember[]>([
+		{ id: generateId(), nome: '', funcao: '', empresa: '' }
+	]);
+
+	// Work schedule
+	let workSchedule = $state<WorkSchedule>({
+		inicio: '08:00',
+		intervaloInicio: '12:00',
+		intervaloFim: '13:00',
+		fim: '17:00',
+		horasExtras: ''
+	});
+
+	// Activities
+	let atividades = $state('');
+
+	// Photos
+	let photos = $state<Photo[]>([]);
+
+	// Observations
+	let observations = $state('');
+
+	// Final signatures
+	let assinaturaResponsavel = $state('');
+	let assinaturaCliente = $state('');
+
+	// UI state
+	let loading = $state(false);
+	let error = $state<string | null>(null);
+	let success = $state(false);
+	let searchingOS = $state(false);
+
+	function generateId(): string {
+		return `${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+	}
+
+	// Representative functions
+	function addRepresentative() {
+		representatives = [...representatives, { 
+			id: generateId(), 
+			nome: '', 
+			cargo: '', 
+			empresa: '', 
+			assinatura: '' 
+		}];
+	}
+
+	function removeRepresentative(id: string) {
+		if (representatives.length > 1) {
+			representatives = representatives.filter(r => r.id !== id);
+		}
+	}
+
+	function updateRepresentative(id: string, field: keyof Representative, value: string) {
+		representatives = representatives.map(r => 
+			r.id === id ? { ...r, [field]: value } : r
+		);
+	}
+
+	// Team member functions
+	function addTeamMember() {
+		teamMembers = [...teamMembers, { 
+			id: generateId(), 
+			nome: '', 
+			funcao: '', 
+			empresa: '' 
+		}];
+	}
+
+	function removeTeamMember(id: string) {
+		if (teamMembers.length > 1) {
+			teamMembers = teamMembers.filter(m => m.id !== id);
+		}
+	}
+
+	function updateTeamMember(id: string, field: keyof TeamMember, value: string) {
+		teamMembers = teamMembers.map(m => 
+			m.id === id ? { ...m, [field]: value } : m
+		);
+	}
+
+	// Calculate worked hours
+	const horasTrabalhadas = $derived(() => {
+		try {
+			const [inicioH, inicioM] = workSchedule.inicio.split(':').map(Number);
+			const [intInicioH, intInicioM] = workSchedule.intervaloInicio.split(':').map(Number);
+			const [intFimH, intFimM] = workSchedule.intervaloFim.split(':').map(Number);
+			const [fimH, fimM] = workSchedule.fim.split(':').map(Number);
+
+			const manha = (intInicioH * 60 + intInicioM) - (inicioH * 60 + inicioM);
+			const tarde = (fimH * 60 + fimM) - (intFimH * 60 + intFimM);
+			const total = manha + tarde;
+
+			const horas = Math.floor(total / 60);
+			const minutos = total % 60;
+
+			return `${horas}h${minutos > 0 ? ` ${minutos}min` : ''}`;
+		} catch {
+			return '0h';
+		}
+	});
+
+	// OS search functionality
+	async function searchOS() {
+		if (!osNumber.trim()) {
+			error = 'Digite o número da OS para buscar';
+			return;
+		}
+
+		searchingOS = true;
+		error = null;
+
+		try {
+			const response = await fetch(`${API_URL}/admin/service-orders?search=${encodeURIComponent(osNumber)}`, {
+				headers: {
+					Authorization: `Bearer ${auth.token}`
+				}
+			});
+
+			if (response.ok) {
+				const orders = await response.json();
+				if (orders.length > 0) {
+					const os = orders[0];
+					clientName = os.clientName || '';
+					location = os.location || '';
+					projeto = os.serviceType || '';
+				} else {
+					error = 'OS não encontrada. Preencha os dados manualmente.';
+				}
+			}
+		} catch (err) {
+			console.error('Error searching OS:', err);
+		} finally {
+			searchingOS = false;
+		}
+	}
+
+	// Form submission
+	async function handleSubmit(e: Event) {
+		e.preventDefault();
+		error = null;
+		success = false;
+
+		// Validation
+		if (!osNumber.trim()) {
+			error = 'Número da OS é obrigatório';
+			return;
+		}
+
+		if (!clientName.trim()) {
+			error = 'Nome do cliente é obrigatório';
+			return;
+		}
+
+		if (!descricaoServico.trim()) {
+			error = 'Descrição do serviço é obrigatória';
+			return;
+		}
+
+		loading = true;
+
+		try {
+			const requestBody = {
+				template,
+				osNumber,
+				reportDate,
+				projeto,
+				clientName,
+				location,
+				descricaoServico,
+				representatives: representatives.map(r => ({
+					nome: r.nome,
+					cargo: r.cargo,
+					empresa: r.empresa,
+					assinatura: r.assinatura
+				})),
+				teamMembers: teamMembers.map(m => ({
+					nome: m.nome,
+					funcao: m.funcao,
+					empresa: m.empresa
+				})),
+				workSchedule,
+				horasTrabalhadas: horasTrabalhadas(),
+				atividades,
+				photos,
+				observations,
+				assinaturaResponsavel,
+				assinaturaCliente
+			};
+
+			const response = await fetch(`${API_URL}/reports/rdo`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${auth.token}`
+				},
+				body: JSON.stringify(requestBody)
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.message || 'Erro ao gerar relatório');
+			}
+
+			// Download the generated file
+			const blob = await response.blob();
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `rdo_montagem_${osNumber}_${Date.now()}.docx`;
+			document.body.appendChild(a);
+			a.click();
+			window.URL.revokeObjectURL(url);
+			document.body.removeChild(a);
+
+			success = true;
+
+			setTimeout(() => {
+				resetForm();
+			}, 2000);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Erro ao gerar relatório';
+		} finally {
+			loading = false;
+		}
+	}
+
+	function resetForm() {
+		template = 'nx_energy';
+		osNumber = '';
+		reportDate = new Date().toISOString().split('T')[0];
+		projeto = '';
+		clientName = '';
+		location = '';
+		descricaoServico = '';
+		representatives = [{ id: generateId(), nome: '', cargo: '', empresa: '', assinatura: '' }];
+		teamMembers = [{ id: generateId(), nome: '', funcao: '', empresa: '' }];
+		workSchedule = {
+			inicio: '08:00',
+			intervaloInicio: '12:00',
+			intervaloFim: '13:00',
+			fim: '17:00',
+			horasExtras: ''
+		};
+		atividades = '';
+		photos = [];
+		observations = '';
+		assinaturaResponsavel = '';
+		assinaturaCliente = '';
+		success = false;
+		error = null;
+	}
+</script>
+
+
+<div class="max-w-5xl mx-auto animate-in">
+	<div class="modern-card">
+		<!-- Header do Card -->
+		<div class="modern-card-header">
+			<div class="modern-card-title">
+				<div class="modern-card-title-icon" style="background: var(--gradient-purple);">
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+					</svg>
+				</div>
+				RDO de Montagem
+			</div>
+			<div class="text-sm" style="color: var(--text-muted);">
+				Relatório Diário de Obra
+			</div>
+		</div>
+
+		<form onsubmit={handleSubmit} class="space-y-8">
+			<!-- Section 1: Template Selection -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Template
+				</h3>
+				<div class="radio-group">
+					<label class="radio-label">
+						<input
+							type="radio"
+							bind:group={template}
+							value="nx_energy"
+							class="modern-radio"
+						/>
+						<span style="color: var(--text-primary);">NX Energy</span>
+					</label>
+					<label class="radio-label">
+						<input
+							type="radio"
+							bind:group={template}
+							value="sercamp"
+							class="modern-radio"
+						/>
+						<span style="color: var(--text-primary);">SERCAMP</span>
+					</label>
+				</div>
+			</section>
+
+			<!-- Section 2: General Information -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Informações Gerais
+				</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+					<!-- OS Number with search -->
+					<div class="form-group">
+						<label for="osNumber" class="modern-label modern-label-required">
+							Número da OS
+						</label>
+						<div class="flex gap-2">
+							<input
+								id="osNumber"
+								type="text"
+								bind:value={osNumber}
+								required
+								class="modern-input flex-1"
+								placeholder="Ex: OS-2024-001"
+							/>
+							<button
+								type="button"
+								onclick={searchOS}
+								disabled={searchingOS}
+								class="btn-modern btn-modern-secondary px-3"
+								title="Buscar OS"
+							>
+								{#if searchingOS}
+									<svg class="w-5 h-5 animate-spin" viewBox="0 0 24 24">
+										<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+										<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+									</svg>
+								{:else}
+									<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+										<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+									</svg>
+								{/if}
+							</button>
+						</div>
+					</div>
+
+					<!-- Report Date -->
+					<div class="form-group">
+						<label for="reportDate" class="modern-label">
+							Data
+						</label>
+						<input
+							id="reportDate"
+							type="date"
+							bind:value={reportDate}
+							class="modern-input"
+						/>
+					</div>
+
+					<!-- Project -->
+					<div class="form-group">
+						<label for="projeto" class="modern-label">
+							Projeto
+						</label>
+						<input
+							id="projeto"
+							type="text"
+							bind:value={projeto}
+							class="modern-input"
+							placeholder="Nome do projeto"
+						/>
+					</div>
+
+					<!-- Client Name -->
+					<div class="form-group">
+						<label for="clientName" class="modern-label modern-label-required">
+							Cliente
+						</label>
+						<input
+							id="clientName"
+							type="text"
+							bind:value={clientName}
+							required
+							class="modern-input"
+							placeholder="Nome do cliente"
+						/>
+					</div>
+
+					<!-- Location -->
+					<div class="form-group md:col-span-2">
+						<label for="location" class="modern-label">
+							Local
+						</label>
+						<input
+							id="location"
+							type="text"
+							bind:value={location}
+							class="modern-input"
+							placeholder="Local da obra"
+						/>
+					</div>
+				</div>
+			</section>
+
+			<!-- Section 3: Service Description -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Descrição do Serviço <span style="color: var(--color-danger);">*</span>
+				</h3>
+				<textarea
+					bind:value={descricaoServico}
+					rows="4"
+					required
+					class="modern-textarea"
+					placeholder="Descreva o serviço a ser executado..."
+				></textarea>
+			</section>
+
+			<!-- Section 4: Representatives with Signatures -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Representantes
+				</h3>
+				<div class="space-y-4">
+					{#each representatives as rep (rep.id)}
+						<div class="p-4 rounded-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+							<div class="flex justify-between items-start mb-4">
+								<span class="text-sm font-semibold" style="color: var(--text-secondary);">Representante</span>
+								{#if representatives.length > 1}
+									<button
+										type="button"
+										onclick={() => removeRepresentative(rep.id)}
+										class="p-1.5 rounded-lg transition-colors"
+										style="color: var(--color-danger);"
+										title="Remover representante"
+									>
+										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+											<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+										</svg>
+									</button>
+								{/if}
+							</div>
+							
+							<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+								<div class="form-group">
+									<label for="rep-nome-{rep.id}" class="modern-label">Nome</label>
+									<input
+										id="rep-nome-{rep.id}"
+										type="text"
+										value={rep.nome}
+										oninput={(e) => updateRepresentative(rep.id, 'nome', e.currentTarget.value)}
+										class="modern-input"
+										placeholder="Nome do representante"
+									/>
+								</div>
+								<div class="form-group">
+									<label for="rep-cargo-{rep.id}" class="modern-label">Cargo</label>
+									<input
+										id="rep-cargo-{rep.id}"
+										type="text"
+										value={rep.cargo}
+										oninput={(e) => updateRepresentative(rep.id, 'cargo', e.currentTarget.value)}
+										class="modern-input"
+										placeholder="Cargo"
+									/>
+								</div>
+								<div class="form-group">
+									<label for="rep-empresa-{rep.id}" class="modern-label">Empresa</label>
+									<input
+										id="rep-empresa-{rep.id}"
+										type="text"
+										value={rep.empresa}
+										oninput={(e) => updateRepresentative(rep.id, 'empresa', e.currentTarget.value)}
+										class="modern-input"
+										placeholder="Empresa"
+									/>
+								</div>
+							</div>
+							
+							<SignatureCapture 
+								label="Assinatura do Representante"
+								value={rep.assinatura}
+								onchange={(sig) => updateRepresentative(rep.id, 'assinatura', sig)}
+							/>
+						</div>
+					{/each}
+					
+					<button
+						type="button"
+						onclick={addRepresentative}
+						class="w-full py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+						style="border: 2px dashed var(--border-color); color: var(--text-muted); background-color: transparent;"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+						</svg>
+						Adicionar Representante
+					</button>
+				</div>
+			</section>
+
+			<!-- Section 5: Team Members -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Equipe de Trabalho
+				</h3>
+				<div class="overflow-x-auto rounded-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+					<table class="w-full">
+						<thead>
+							<tr style="border-bottom: 1px solid var(--border-color);">
+								<th class="text-left text-sm font-semibold p-3" style="color: var(--text-secondary);">Nome</th>
+								<th class="text-left text-sm font-semibold p-3" style="color: var(--text-secondary);">Função</th>
+								<th class="text-left text-sm font-semibold p-3" style="color: var(--text-secondary);">Empresa</th>
+								<th class="p-3 w-10"></th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each teamMembers as member (member.id)}
+								<tr style="border-bottom: 1px solid var(--border-color);">
+									<td class="p-3">
+										<input
+											type="text"
+											value={member.nome}
+											oninput={(e) => updateTeamMember(member.id, 'nome', e.currentTarget.value)}
+											class="modern-input"
+											placeholder="Nome"
+										/>
+									</td>
+									<td class="p-3">
+										<input
+											type="text"
+											value={member.funcao}
+											oninput={(e) => updateTeamMember(member.id, 'funcao', e.currentTarget.value)}
+											class="modern-input"
+											placeholder="Função"
+										/>
+									</td>
+									<td class="p-3">
+										<input
+											type="text"
+											value={member.empresa}
+											oninput={(e) => updateTeamMember(member.id, 'empresa', e.currentTarget.value)}
+											class="modern-input"
+											placeholder="Empresa"
+										/>
+									</td>
+									<td class="p-3">
+										{#if teamMembers.length > 1}
+											<button
+												type="button"
+												onclick={() => removeTeamMember(member.id)}
+												class="p-2 rounded-lg transition-colors"
+												style="color: var(--color-danger);"
+												title="Remover membro"
+											>
+												<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+												</svg>
+											</button>
+										{/if}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				
+				<button
+					type="button"
+					onclick={addTeamMember}
+					class="mt-4 w-full py-3.5 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+					style="border: 2px dashed var(--border-color); color: var(--text-muted); background-color: transparent;"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+					</svg>
+					Adicionar Membro da Equipe
+				</button>
+			</section>
+
+			<!-- Section 6: Work Schedule -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Resumo da Jornada de Trabalho
+				</h3>
+				<div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+					<div class="form-group">
+						<label for="inicio" class="modern-label">Início</label>
+						<input
+							id="inicio"
+							type="time"
+							bind:value={workSchedule.inicio}
+							class="modern-input"
+						/>
+					</div>
+					<div class="form-group">
+						<label for="intervaloInicio" class="modern-label">Intervalo Início</label>
+						<input
+							id="intervaloInicio"
+							type="time"
+							bind:value={workSchedule.intervaloInicio}
+							class="modern-input"
+						/>
+					</div>
+					<div class="form-group">
+						<label for="intervaloFim" class="modern-label">Intervalo Fim</label>
+						<input
+							id="intervaloFim"
+							type="time"
+							bind:value={workSchedule.intervaloFim}
+							class="modern-input"
+						/>
+					</div>
+					<div class="form-group">
+						<label for="fim" class="modern-label">Fim</label>
+						<input
+							id="fim"
+							type="time"
+							bind:value={workSchedule.fim}
+							class="modern-input"
+						/>
+					</div>
+					<div class="form-group">
+						<label for="horasExtras" class="modern-label">Horas Extras</label>
+						<input
+							id="horasExtras"
+							type="text"
+							bind:value={workSchedule.horasExtras}
+							class="modern-input"
+							placeholder="Ex: 2h"
+						/>
+					</div>
+				</div>
+				
+				<div class="mt-4 p-4 rounded-xl flex items-center justify-between" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+					<span class="text-sm" style="color: var(--text-muted);">Total de horas trabalhadas:</span>
+					<span class="text-xl font-bold" style="color: var(--color-primary);">{horasTrabalhadas()}</span>
+				</div>
+			</section>
+
+			<!-- Section 7: Activities -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Atividades Realizadas
+				</h3>
+				<textarea
+					bind:value={atividades}
+					rows="6"
+					class="modern-textarea"
+					placeholder="Descreva as atividades realizadas durante o dia..."
+				></textarea>
+			</section>
+
+			<!-- Section 8: Photos -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Fotos
+				</h3>
+				<PhotoCapture bind:photos maxPhotos={30} />
+			</section>
+
+			<!-- Section 9: Observations -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Observações
+				</h3>
+				<textarea
+					bind:value={observations}
+					rows="4"
+					class="modern-textarea"
+					placeholder="Observações gerais..."
+				></textarea>
+			</section>
+
+			<!-- Section 10: Final Signatures -->
+			<section>
+				<h3 class="text-base font-semibold mb-4 pb-2" style="color: var(--text-primary); border-bottom: 1px solid var(--border-color);">
+					Assinaturas Finais
+				</h3>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+					<div class="p-4 rounded-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+						<SignatureCapture 
+							label="Assinatura do Responsável SERCAMP"
+							bind:value={assinaturaResponsavel}
+						/>
+					</div>
+					<div class="p-4 rounded-xl" style="background-color: var(--bg-secondary); border: 1px solid var(--border-color);">
+						<SignatureCapture 
+							label="Assinatura do Cliente"
+							bind:value={assinaturaCliente}
+						/>
+					</div>
+				</div>
+			</section>
+
+			<!-- Error Message -->
+			{#if error}
+				<div class="modern-alert modern-alert-error animate-in">
+					<svg class="modern-alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+					<span>{error}</span>
+				</div>
+			{/if}
+
+			<!-- Success Message -->
+			{#if success}
+				<div class="modern-alert modern-alert-success animate-in">
+					<svg class="modern-alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+					</svg>
+					<span>RDO de Montagem gerado com sucesso! Download iniciado.</span>
+				</div>
+			{/if}
+
+			<!-- Submit Buttons -->
+			<div class="flex flex-col sm:flex-row gap-3 pt-4">
+				<button
+					type="submit"
+					disabled={loading}
+					class="btn-modern btn-modern-primary flex-1 py-3.5"
+				>
+					{#if loading}
+						<div class="loading-dots">
+							<span></span>
+							<span></span>
+							<span></span>
+						</div>
+						<span>Gerando Relatório...</span>
+					{:else}
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+						</svg>
+						<span>Gerar RDO de Montagem</span>
+					{/if}
+				</button>
+
+				<button
+					type="button"
+					onclick={resetForm}
+					disabled={loading}
+					class="btn-modern btn-modern-secondary py-3.5 sm:w-auto"
+				>
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+					</svg>
+					<span>Limpar</span>
+				</button>
+			</div>
+		</form>
+	</div>
+</div>

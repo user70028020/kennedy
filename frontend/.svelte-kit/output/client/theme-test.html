@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Tema</title>
+    <style>
+        /* Light theme - default */
+        :root,
+        html,
+        html.light,
+        html[data-theme="light"] {
+            --bg-primary: #ffffff !important;
+            --bg-secondary: #f3f4f6 !important;
+            --bg-tertiary: #e5e7eb !important;
+            --text-primary: #111827 !important;
+            --text-secondary: #4b5563 !important;
+            --text-muted: #9ca3af !important;
+        }
+
+        /* Dark theme */
+        html.dark,
+        html[data-theme="dark"] {
+            --bg-primary: #111827 !important;
+            --bg-secondary: #1f2937 !important;
+            --bg-tertiary: #374151 !important;
+            --text-primary: #f9fafb !important;
+            --text-secondary: #d1d5db !important;
+            --text-muted: #6b7280 !important;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-primary) !important;
+            color: var(--text-primary) !important;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #2563eb;
+        }
+
+        .info {
+            background-color: var(--bg-tertiary);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+        }
+
+        .debug {
+            font-family: monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teste de Sistema de Temas</h1>
+        
+        <div class="card">
+            <h2>Controles</h2>
+            <button onclick="toggleTheme()">Alternar Tema</button>
+            <button onclick="showDebug()">Mostrar Debug</button>
+        </div>
+
+        <div class="card">
+            <h2>Texto Primário</h2>
+            <p style="color: var(--text-primary);">Este é um texto primário</p>
+            <p style="color: var(--text-secondary);">Este é um texto secundário</p>
+            <p style="color: var(--text-muted);">Este é um texto muted</p>
+        </div>
+
+        <div class="card">
+            <h2>Backgrounds</h2>
+            <div style="background-color: var(--bg-primary); padding: 10px; margin: 5px 0;">BG Primary</div>
+            <div style="background-color: var(--bg-secondary); padding: 10px; margin: 5px 0;">BG Secondary</div>
+            <div style="background-color: var(--bg-tertiary); padding: 10px; margin: 5px 0;">BG Tertiary</div>
+        </div>
+
+        <div id="debug" class="info" style="display: none;">
+            <h3>Debug Info</h3>
+            <div class="debug" id="debug-content"></div>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            console.log('Toggling from', currentTheme, 'to', newTheme);
+            
+            html.classList.remove('dark', 'light');
+            html.classList.add(newTheme);
+            html.setAttribute('data-theme', newTheme);
+            
+            console.log('HTML classes:', html.className);
+            console.log('Data-theme:', html.getAttribute('data-theme'));
+            
+            // Force repaint
+            void html.offsetHeight;
+            
+            showDebug();
+        }
+
+        function showDebug() {
+            const html = document.documentElement;
+            const styles = getComputedStyle(html);
+            
+            const debugInfo = {
+                'HTML Classes': html.className,
+                'Data-theme': html.getAttribute('data-theme'),
+                '--bg-primary': styles.getPropertyValue('--bg-primary'),
+                '--bg-secondary': styles.getPropertyValue('--bg-secondary'),
+                '--bg-tertiary': styles.getPropertyValue('--bg-tertiary'),
+                '--text-primary': styles.getPropertyValue('--text-primary'),
+                '--text-secondary': styles.getPropertyValue('--text-secondary'),
+                '--text-muted': styles.getPropertyValue('--text-muted'),
+                'Body BG': getComputedStyle(document.body).backgroundColor,
+                'Body Color': getComputedStyle(document.body).color
+            };
+            
+            const debugContent = document.getElementById('debug-content');
+            debugContent.innerHTML = Object.entries(debugInfo)
+                .map(([key, value]) => `<div><strong>${key}:</strong> ${value}</div>`)
+                .join('');
+            
+            document.getElementById('debug').style.display = 'block';
+            
+            console.log('Debug Info:', debugInfo);
+        }
+
+        // Show debug on load
+        window.addEventListener('load', showDebug);
+    </script>
+</body>
+</html>

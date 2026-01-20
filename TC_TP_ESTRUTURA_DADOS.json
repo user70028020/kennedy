@@ -1,0 +1,458 @@
+{
+  "template_name": "TC/TP - Transformador para Instrumentos",
+  "template_files": {
+    "nx": "backend/templates/tc_tp_nx.docx",
+    "sercamp": "backend/templates/tc_tp_sercamp.docx"
+  },
+  "estrutura_identica": true,
+  "checkboxes_topo": [
+    {
+      "id": "tipo_tc",
+      "label": "TC",
+      "field_name": "Selecionar1",
+      "default": false
+    },
+    {
+      "id": "tipo_tp",
+      "label": "TP",
+      "field_name": "Selecionar2",
+      "default": false
+    }
+  ],
+  "dados_gerais": {
+    "section_title": "DADOS DO EQUIPAMENTO",
+    "fields": [
+      {
+        "id": "cliente",
+        "label": "Cliente:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "data",
+        "label": "Data:",
+        "type": "date",
+        "required": true
+      },
+      {
+        "id": "local_equipamento",
+        "label": "Local do Equipamento:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "elaborado_por",
+        "label": "Elaborado por:",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  "caracteristicas": {
+    "section_title": "CARACTERÍSTICAS",
+    "fields": [
+      {
+        "id": "fabricante",
+        "label": "Fabricante:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "tipo",
+        "label": "Tipo:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "numero_serie_r",
+        "label": "Número de série - Fase R:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "numero_serie_s",
+        "label": "Número de série - Fase S:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "numero_serie_t",
+        "label": "Número de série - Fase T:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "relacao",
+        "label": "Relação:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "ano_fabricacao",
+        "label": "Ano de fabricação:",
+        "type": "number",
+        "required": true
+      },
+      {
+        "id": "tensao_nominal",
+        "label": "Tensão nominal:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "potencia_nominal",
+        "label": "Potência nominal:",
+        "type": "text",
+        "required": true
+      },
+      {
+        "id": "fator_servico",
+        "label": "Fator de serviço:",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  "classes_precisao": {
+    "section_title": "Classes de Precisão",
+    "note": "Labels incompletos no template original - apenas ':' em alguns campos",
+    "fields": [
+      {
+        "id": "classe_precisao_enrol_1",
+        "label": "Classe de precisão do enrol.:",
+        "type": "text",
+        "required": false
+      },
+      {
+        "id": "classe_precisao_enrol_2",
+        "label": "Classe de precisão do enrol.:",
+        "type": "text",
+        "required": false
+      },
+      {
+        "id": "classe_precisao_adicional_1",
+        "label": ":",
+        "type": "text",
+        "required": false
+      },
+      {
+        "id": "classe_precisao_adicional_2",
+        "label": ":",
+        "type": "text",
+        "required": false
+      },
+      {
+        "id": "classe_precisao_adicional_3",
+        "label": ":",
+        "type": "text",
+        "required": false
+      }
+    ]
+  },
+  "verificacoes_servicos": {
+    "section_title": "Verificações / Serviços",
+    "legenda": {
+      "sim": "ý S = Sim",
+      "nao": "ý N = Não",
+      "inexistente": "¨ Inexistente / Não executado"
+    },
+    "items": [
+      {
+        "id": "verificacao_01",
+        "numero": "01",
+        "descricao": "Fixações e alinhamentos",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      },
+      {
+        "id": "verificacao_02",
+        "numero": "02",
+        "descricao": "Integridade dos isoladores",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      },
+      {
+        "id": "verificacao_03",
+        "numero": "03",
+        "descricao": "Aterramentos",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      },
+      {
+        "id": "verificacao_04",
+        "numero": "04",
+        "descricao": "Limpeza dos isoladores",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      },
+      {
+        "id": "verificacao_05",
+        "numero": "05",
+        "descricao": "Reapertos das conexões",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      },
+      {
+        "id": "verificacao_06",
+        "numero": "06",
+        "descricao": "",
+        "note": "Item sem label no template original",
+        "type": "select",
+        "options": ["S", "N", "Inexistente"]
+      }
+    ]
+  },
+  "ensaios_relacao_transformacao": {
+    "section_title": "Ensaios de Relação de Transformação",
+    "tensao_aplicada_em": {
+      "type": "radio",
+      "options": [
+        {
+          "id": "tensao_primario",
+          "label": "Primário",
+          "checkbox": true
+        },
+        {
+          "id": "tensao_secundario",
+          "label": "Secundário",
+          "checkbox": true
+        }
+      ]
+    },
+    "enrolamento_aplicado": {
+      "label": "Enrolamento aplicado:",
+      "type": "array",
+      "count": 5,
+      "fields": [
+        {"id": "enrol_aplicado_1", "type": "text"},
+        {"id": "enrol_aplicado_2", "type": "text"},
+        {"id": "enrol_aplicado_3", "type": "text"},
+        {"id": "enrol_aplicado_4", "type": "text"},
+        {"id": "enrol_aplicado_5", "type": "text"}
+      ]
+    },
+    "tensao_aplicada": {
+      "label": "Tensão Aplicada",
+      "type": "array",
+      "count": 5,
+      "fields": [
+        {"id": "tensao_aplicada_1", "type": "text"},
+        {"id": "tensao_aplicada_2", "type": "text"},
+        {"id": "tensao_aplicada_3", "type": "text"},
+        {"id": "tensao_aplicada_4", "type": "text"},
+        {"id": "tensao_aplicada_5", "type": "text"}
+      ]
+    },
+    "enrolamento_medido": {
+      "label": "Enrolamento medido:",
+      "type": "array",
+      "count": 5,
+      "fields": [
+        {"id": "enrol_medido_1", "type": "text"},
+        {"id": "enrol_medido_2", "type": "text"},
+        {"id": "enrol_medido_3", "type": "text"},
+        {"id": "enrol_medido_4", "type": "text"},
+        {"id": "enrol_medido_5", "type": "text"}
+      ]
+    },
+    "tensao_medida_por_fase": {
+      "label": "Tensão Medida",
+      "type": "matrix",
+      "fases": ["R", "S", "T"],
+      "colunas": 5,
+      "fields": {
+        "R": [
+          {"id": "tensao_medida_r_1", "type": "text"},
+          {"id": "tensao_medida_r_2", "type": "text"},
+          {"id": "tensao_medida_r_3", "type": "text"},
+          {"id": "tensao_medida_r_4", "type": "text"},
+          {"id": "tensao_medida_r_5", "type": "text"}
+        ],
+        "S": [
+          {"id": "tensao_medida_s_1", "type": "text"},
+          {"id": "tensao_medida_s_2", "type": "text"},
+          {"id": "tensao_medida_s_3", "type": "text"},
+          {"id": "tensao_medida_s_4", "type": "text"},
+          {"id": "tensao_medida_s_5", "type": "text"}
+        ],
+        "T": [
+          {"id": "tensao_medida_t_1", "type": "text"},
+          {"id": "tensao_medida_t_2", "type": "text"},
+          {"id": "tensao_medida_t_3", "type": "text"},
+          {"id": "tensao_medida_t_4", "type": "text"},
+          {"id": "tensao_medida_t_5", "type": "text"}
+        ]
+      }
+    }
+  },
+  "ensaios_resistencia_isolamento": {
+    "section_title": "Ensaios de Resistência de Isolamento (MW)",
+    "condicoes_ensaio": {
+      "fields": [
+        {
+          "id": "instrumento_utilizado",
+          "label": "Instrumento Utilizado:",
+          "type": "text"
+        },
+        {
+          "id": "ensaios_durante",
+          "label": "Ensaios Durante:",
+          "value": "1 minuto",
+          "type": "fixed",
+          "note": "Valor fixo no template"
+        },
+        {
+          "id": "temperatura_ambiente",
+          "label": "Temperatura Ambiente:",
+          "type": "number",
+          "unit": "°C"
+        },
+        {
+          "id": "umidade_relativa",
+          "label": "Umidade Relativa do Ar:",
+          "type": "number",
+          "unit": "%"
+        }
+      ]
+    },
+    "enrolamento_medido": {
+      "label": "Enrolamento medido:",
+      "type": "array",
+      "count": 6,
+      "fields": [
+        {"id": "enrol_medido_res_1", "type": "text"},
+        {"id": "enrol_medido_res_2", "type": "text"},
+        {"id": "enrol_medido_res_3", "type": "text"},
+        {"id": "enrol_medido_res_4", "type": "text"},
+        {"id": "enrol_medido_res_5", "type": "text"},
+        {"id": "enrol_medido_res_6", "type": "text"}
+      ]
+    },
+    "conexoes": {
+      "label": "Conexões:",
+      "types": ["AT x Massa", "AT x Sec.", "Sec x Massa", "Sec x Massa"],
+      "note": "Sec x Massa aparece duplicado no template"
+    },
+    "tensao_aplicada": {
+      "label": "Tensão Aplicada",
+      "unit": "Vcc",
+      "count": 4
+    },
+    "resistencia_medida_por_fase": {
+      "label": "Resist. Medida",
+      "unit": "MW",
+      "type": "matrix",
+      "fases": ["R", "S", "T"],
+      "conexoes": 4,
+      "fields": {
+        "R": [
+          {"id": "resist_iso_r_1", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_r_2", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_r_3", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_r_4", "type": "text", "unit": "MW"}
+        ],
+        "S": [
+          {"id": "resist_iso_s_1", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_s_2", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_s_3", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_s_4", "type": "text", "unit": "MW"}
+        ],
+        "T": [
+          {"id": "resist_iso_t_1", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_t_2", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_t_3", "type": "text", "unit": "MW"},
+          {"id": "resist_iso_t_4", "type": "text", "unit": "MW"}
+        ]
+      }
+    }
+  },
+  "medicoes_resistencia_ohmica": {
+    "section_title": "Medições de Resistência Ohmica nos enrolamentos",
+    "enrolamento_medido": {
+      "label": "Enrolamento medido:",
+      "type": "array",
+      "count": 5,
+      "fields": [
+        {"id": "enrol_medido_ohm_1", "type": "text"},
+        {"id": "enrol_medido_ohm_2", "type": "text"},
+        {"id": "enrol_medido_ohm_3", "type": "text"},
+        {"id": "enrol_medido_ohm_4", "type": "text"},
+        {"id": "enrol_medido_ohm_5", "type": "text"}
+      ]
+    },
+    "resistencia_medida_por_fase": {
+      "label": "Resist. Medida",
+      "unit": "W",
+      "type": "matrix",
+      "fases": ["R", "S", "T"],
+      "fields": {
+        "R": {"id": "resist_ohm_r", "type": "text", "unit": "W"},
+        "S": {"id": "resist_ohm_s", "type": "text", "unit": "W"},
+        "T": {"id": "resist_ohm_t", "type": "text", "unit": "W"}
+      }
+    }
+  },
+  "ensaios_polaridades": {
+    "section_title": "Ensaios de Polaridades",
+    "enrolamento_medido": {
+      "label": "Enrolamento medido:",
+      "type": "array",
+      "count": 5,
+      "fields": [
+        {"id": "enrol_medido_pol_1", "type": "text"},
+        {"id": "enrol_medido_pol_2", "type": "text"},
+        {"id": "enrol_medido_pol_3", "type": "text"},
+        {"id": "enrol_medido_pol_4", "type": "text"},
+        {"id": "enrol_medido_pol_5", "type": "text"}
+      ]
+    },
+    "polaridade_medida_por_fase": {
+      "label": "Polaridade Medida",
+      "type": "matrix",
+      "fases": ["R", "S", "T"],
+      "checkboxes_por_fase": 5,
+      "checkbox_label": "Subritativa",
+      "note": "Provavelmente deveria ser 'Subtrativa' (erro no template)",
+      "fields": {
+        "R": [
+          {"id": "polaridade_r_1", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_r_2", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_r_3", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_r_4", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_r_5", "type": "checkbox", "label": "Subritativa"}
+        ],
+        "S": [
+          {"id": "polaridade_s_1", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_s_2", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_s_3", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_s_4", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_s_5", "type": "checkbox", "label": "Subritativa"}
+        ],
+        "T": [
+          {"id": "polaridade_t_1", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_t_2", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_t_3", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_t_4", "type": "checkbox", "label": "Subritativa"},
+          {"id": "polaridade_t_5", "type": "checkbox", "label": "Subritativa"}
+        ]
+      }
+    }
+  },
+  "observacoes": {
+    "section_title": "OBSERVAÇÕES / RECOMENDACOES",
+    "note": "Sem acento no template original",
+    "field": {
+      "id": "observacoes",
+      "label": "OBSERVAÇÕES / RECOMENDACOES",
+      "type": "textarea",
+      "rows": 10
+    }
+  },
+  "estatisticas": {
+    "total_checkboxes": 19,
+    "total_campos_texto": 90,
+    "total_campos": 109,
+    "fases": ["R", "S", "T"],
+    "tabelas": 3
+  }
+}
